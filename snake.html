@@ -8,18 +8,22 @@
 <script src="https://code.jquery.com/jquery-2.1.0.js"></script>
 <script>
 
+    //настройка холста
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
 
+    //сохраняем ширину и высоту в переменные
     var width = canvas.width;
     var height = canvas.height;
 
+    //задаем размер блока и сетки
     var blockSize = 30;
     var widthInBlocks = width / blockSize;
     var heightInBlocks = height / blockSize;
 
     var score = 0;
 
+    //круги
     var circle = function (x, y, radius, fillCircle) {
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2, false);
@@ -30,6 +34,7 @@
         }
     };
 
+    //рисуем рамку
     var drawBorder = function () {
         ctx.fillStyle = "Gray";
         ctx.fillRect(0, 0, width, blockSize);
@@ -38,6 +43,7 @@
         ctx.fillRect(width - blockSize, 0, blockSize, height);
     };
 
+    //рисуем счёт
     var drawScore = function () {
         ctx.font = "30px Comic Sans MS";
         ctx.fillStyle = "Black";
@@ -57,29 +63,34 @@
 
     };
 
+    //конструктор блоков
     var Block = function (col, row) {
         this.col = col;
         this.row = row;
     };
 
+    //рисуем блок по кординатам
     Block.prototype.drawSquare = function (color) {
         var x = this.col * blockSize;
         var y = this.row * blockSize;
         ctx.fillStyle = color;
         ctx.fillRect(x, y, blockSize, blockSize);
-    }
+    };
 
+    //рисуем круг по кординатам
     Block.prototype.drawCircle = function (color) {
         var centerX = this.col * blockSize + blockSize / 2;
         var centerY = this.row * blockSize + blockSize / 2;
         ctx.fillStyle = color;
         circle(centerX, centerY, blockSize / 2, true);
-    }
+    };
 
+    //проверка на наложение ячеек друг на друга
     Block.prototype.equal = function (otherBlock) {
         return this.col === otherBlock.col && this.row === otherBlock.row;
     };
 
+    //создание начальной змеи
     var Snake = function () {
         this.segments = [
             new Block(7, 5),
@@ -90,6 +101,7 @@
         this.nextDirection = "right";
     };
 
+    //генератор простых чисел
     function isPrime(num) {
         for (let i = 2; i < num; i++) {
             if (num % i === 0) {
@@ -100,6 +112,7 @@
         return num > 1;
     }
 
+    //рисуем ячейки змейки
     Snake.prototype.draw = function () {
         for (var i = 0; i < this.segments.length; i++) {
             this.segments[i].drawSquare("Blue");
@@ -111,6 +124,7 @@
         }
     };
 
+
     Snake.prototype.move = function () {
         var head = this.segments[0];
         var newHead;
@@ -118,7 +132,7 @@
         this.direction = this.nextDirection;
 
         if (this.direction === "right") {
-            newHead = new Block(head.col +1, head.row);
+            newHead = new Block(head.col + 1, head.row);
         } else if (this.direction === "down") {
             newHead = new Block(head.col, head.row + 1);
         } else if (this.direction === "left") {
@@ -127,22 +141,24 @@
             newHead = new Block(head.col, head.row - 1);
         }
 
+
         if (this.checkCollision(newHead)) {
             gameOver();
-            return
+            return;
         }
 
         this.segments.unshift(newHead);
 
         if (newHead.equal(apple.position)) {
             score++;
-            animationTime++;
-            apple.move();
+            animationTime--;
+            apple.move(this.segments);
         } else {
             this.segments.pop();
         }
-    }
+    };
 
+    //проверка на столкновение
     Snake.prototype.checkCollision = function (head) {
         var leftCollision = (head.col === 0);
         var topCollision = (head.row === 0);
@@ -161,6 +177,7 @@
         return wallCollision || selfCollision;
     };
 
+    //задаем новое направление согласно нажатой клавише
     Snake.prototype.setDirection = function (newDirection) {
         if (this.direction === "up" && newDirection === "down") {
             return;
@@ -168,7 +185,7 @@
             return;
         } else if (this.direction === "down" && newDirection === "up") {
             return;
-        } else if (this.direction ==="left" && newDirection === "right") {
+        } else if (this.direction === "left" && newDirection === "right") {
             return;
         }
 
@@ -176,18 +193,30 @@
     };
 
     var Apple = function () {
-        this.position = new Block(10,10);
+        this.position = new Block(10, 10);
     };
 
     Apple.prototype.draw = function () {
         this.position.drawCircle("LimeGreen");
     };
 
-    Apple.prototype.move = function () {
+    //перемешение яблока в случайную позицию
+    Apple.prototype.move = function (occupiedBlocks) {
         var randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
         var randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) + 1;
         this.position = new Block(randomCol, randomRow);
+
+
+        var index = occupiedBlocks.length - 1;
+        while (index >= 0) {
+            if (this.position.equal(occupiedBlocks[index])) {
+                this.move(occupiedBlocks); // Вызываем метод move повторно
+                return;
+            }
+            index--;
+        }
     };
+
 
     var snake = new Snake();
     var apple = new Apple();
@@ -201,7 +230,7 @@
         drawBorder();
     }, 150);
 */
-    var animationTime = 70;
+    var animationTime = 70; //начальная скорость
     var plaing = true;
 
     var gameLoop = function () {
@@ -211,14 +240,18 @@
         snake.draw();
         apple.draw();
         drawBorder();
+
         if (plaing) {
                 setTimeout(gameLoop, animationTime);
             }
         console.log(animationTime);
 
     };
+
+    //начало игрового процесса
     gameLoop();
 
+    // код клавиш в направления
     var directions = {
         37: "left",
         38: "up",
@@ -226,9 +259,10 @@
         40: "down"
     };
 
+    //обработчик нажатия клавиш
     $("body").keydown(function (event) {
         var newDirection = directions[event.keyCode];
-        if (newDirection != undefined) {
+        if (newDirection !== undefined) {
             snake.setDirection(newDirection);
         }
     });
